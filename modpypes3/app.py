@@ -276,8 +276,8 @@ class ClientApplication:
 
     async def open_connection(self):
         """
-        Open a connection to the IP-to-serial device that is connected to
-        an FP-93.
+        Open a TCP connection to the IP-to-serial gateway that is connected to
+        a MODBUS device.  Many modern MODBUS devices have a virtual serial bus.
         """
         if _debug:
             ClientApplication._debug("open_connection")

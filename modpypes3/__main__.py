@@ -4,7 +4,7 @@ Command Shell
 
 import asyncio
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Type
 
 from modpypes3.debugging import modpypes_debugging, ModuleLogger
 from modpypes3.argparse import SimpleArgumentParser
@@ -55,7 +55,7 @@ class CmdShell(Cmd):
         else:
             raise ValueError("holding register address required: 4xxxx")
 
-        datatype: Optional[DataType] = None
+        datatype: Optional[Type[DataType]] = None
 
         # maybe a register count
         if dtype.isdigit():
