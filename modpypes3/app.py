@@ -123,7 +123,10 @@ class ClientCodec(Client[PDU], Server[MPDU]):
         # than the header
         try:
             mpdu_function_code = pdu.pduData[0]
-            mpdu_class = response_types[mpdu_function_code]
+            if mpdu_function_code >= 128:
+                mpdu_class = ExceptionResponse
+            else:
+                mpdu_class = response_types[mpdu_function_code]
         except KeyError:
             raise DecodingError(f"unrecognized MPDU function: {mpdu_function_code}")
         if _debug:
@@ -362,7 +365,10 @@ class ClientApplication:
         # than the header
         try:
             mpdu_function_code = pdu.pduData[0]
-            mpdu_class = response_types[mpdu_function_code]
+            if mpdu_function_code >= 128:
+                mpdu_class = ExceptionResponse
+            else:
+                mpdu_class = response_types[mpdu_function_code]
         except KeyError:
             raise DecodingError(f"unrecognized MPDU function: {mpdu_function_code}")
         if _debug:

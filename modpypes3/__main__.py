@@ -81,7 +81,7 @@ class CmdShell(Cmd):
                 CmdShell._debug("    - result: %r", result)
 
             if isinstance(result, ExceptionResponse):
-                response = str(result)
+                response = "Exception: " + str(result.exceptionCode)
             elif datatype:
                 response = str(datatype.unpack(result))
             else:
