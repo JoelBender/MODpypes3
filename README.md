@@ -1,2 +1,2 @@
-# modpypes3
+# MODpypes3
 MODBUS Communications Library
