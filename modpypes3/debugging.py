@@ -58,7 +58,6 @@ def xtob(data: str, sep: str = "") -> bytes:
 
 
 def ModuleLogger(globs: Dict[str, Any]) -> logging.Logger:
-
     """
     Create a module level logger.
 

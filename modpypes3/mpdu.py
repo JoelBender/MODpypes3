@@ -273,7 +273,6 @@ class UnsignedDoubleInt(DataType):
 
 @modpypes_debugging
 class Real(DataType):
-
     registerLength = 2
 
     @classmethod
@@ -1116,7 +1115,7 @@ class ReadHoldingRegistersResponse(ReadRegistersResponseBase):
 
         ReadRegistersResponseBase.__init__(
             self,
-            values,
+            registers=values,
             function_code=ReadHoldingRegistersResponse.functionCode,
             **kwargs,
         )

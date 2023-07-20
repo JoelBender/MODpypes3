@@ -8,7 +8,7 @@ import asyncio
 import struct
 from collections import defaultdict
 
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from .debugging import modpypes_debugging, ModuleLogger
 
@@ -19,6 +19,7 @@ from .errors import DecodingError
 from .mpdu import (
     MBAP,
     MPDU,
+    data_types,
     request_types,
     response_types,
     ReadHoldingRegistersRequest,
@@ -437,3 +438,82 @@ class ClientApplication:
 
         # return the registers
         return response.registers
+
+
+@modpypes_debugging
+class ServerApplication(Server[PDU]):
+    """
+    MODBUS Server
+    """
+
+    _debug: Callable[..., None]
+
+    unit_number: int
+    register_map: Dict[int, Tuple[str, Any]]
+
+    def __init__(self, unit_number: int, register_map: Dict[int, Tuple[str, Any]]):
+        if _debug:
+            ServerApplication._debug("__init__ %r", unit_number)
+
+        self.unit_number = unit_number
+        self.register_map = register_map
+
+    async def indication(self, mpdu: MPDU) -> None:
+        """
+        Downstream MPDUs are requests.
+        """
+        if _debug:
+            ServerApplication._debug("indication %r", mpdu)
+
+        if mpdu.mbapUnitID != self.unit_number:
+            if _debug:
+                ServerApplication._debug("    - not for us")
+
+        fn = getattr(self, "do_" + mpdu.__class__.__name__, None)
+        if not fn:
+            if _debug:
+                ServerApplication._debug("    - no function")
+            return
+
+        await fn(mpdu)
+
+    async def do_ReadHoldingRegistersRequest(
+        self, mpdu: ReadHoldingRegistersRequest
+    ) -> None:
+        if _debug:
+            ServerApplication._debug("do_ReadHoldingRegistersRequest %r", mpdu)
+
+        register_address = mpdu.address + 40000 + 1
+        if register_address not in self.register_map:
+            if _debug:
+                ServerApplication._debug("    - no register")
+            return
+        if _debug:
+            ServerApplication._debug("    - register_address: %r", register_address)
+
+        # pull the values out of the register map
+        register_datatype, register_value = self.register_map[register_address]
+        if _debug:
+            ServerApplication._debug(
+                "    - register_datatype, register_value: %r, %r",
+                register_datatype,
+                register_value,
+            )
+
+        datatype = data_types[register_datatype]
+        if _debug:
+            ServerApplication._debug("    - datatype: %r", datatype)
+
+        packed_value = datatype.pack(register_value)
+        if _debug:
+            ServerApplication._debug("    - packed_value: %r", packed_value)
+
+        response = ReadHoldingRegistersResponse(
+            packed_value,
+            destination=mpdu.pduSource,
+        )
+        if _debug:
+            ServerApplication._debug("    - response: %r", response)
+
+        # return the response
+        await self.response(response)

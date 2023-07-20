@@ -7,8 +7,10 @@ url = "https://pypi.python.org/simple"
 modpypes3 = {editable = true, path = "."}
 
 [dev-packages]
+build = "*"
 black = "*"
 mypy = "*"
 flake8 = "*"
 pytest = "*"
 pytest-asyncio = "*"
+twine = "*"

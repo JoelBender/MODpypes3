@@ -4,7 +4,7 @@ Command Shell
 
 import asyncio
 
-from typing import Callable, Optional, Type
+from typing import Any, Dict, Callable, Optional, Tuple, Type
 
 from modpypes3.debugging import modpypes_debugging, ModuleLogger
 from modpypes3.argparse import SimpleArgumentParser
@@ -14,12 +14,20 @@ from modpypes3.cmd import Cmd
 from modpypes3.pdu import Address, UnitIPv4Address
 from modpypes3.comm import bind
 from modpypes3.mpdu import ExceptionResponse, DataType, data_types
-from modpypes3.app import ClientApplication
+from modpypes3.ipv4.tcp import TCPServerDirector
+from modpypes3.app import ClientApplication, ServerCodec, ServerApplication
 
 
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
+
+# testing register map
+register_map: Dict[int, Tuple[str, Any]] = {
+    44001: ("be-udint", 7750216),  # PowerScout3 kWh_System
+    44003: ("uint", 64),  # PowerScout3 kW_System
+    44013: ("uint", 72),  # PowerScout3 kVA_System
+}
 
 
 @modpypes_debugging
@@ -93,17 +101,45 @@ class CmdShell(Cmd):
 async def main() -> None:
     try:
         parser = SimpleArgumentParser(prog="modpypes3")
+        parser.add_argument(
+            "-c",
+            "--client",
+            action="store_true",
+            default=None,
+            help="client (default)",
+        )
+        parser.add_argument(
+            "-s",
+            "--server",
+            action="store_true",
+            default=None,
+            help="server",
+        )
         args = parser.parse_args()
         if _debug:
             _log.debug("args: %r", args)
 
-        # build a very small stack
-        console = Console()
-        cmd = CmdShell()
-        bind(console, cmd)
+        if args.server:
+            if _debug:
+                _log.debug("server")
 
-        # wait until the user is done
-        await console.fini.wait()
+            # build a samll stack
+            director = TCPServerDirector(Address(args.address or "0.0.0.0:10502"))
+            codec = ServerCodec()
+            app = ServerApplication(args.unit, register_map)
+            bind(director, codec, app)
+
+            # wait forever
+            await director.serve_forever()
+
+        else:
+            # build a very small stack
+            console = Console()
+            cmd = CmdShell()
+            bind(console, cmd)
+
+            # wait until the user is done
+            await console.fini.wait()
 
     except KeyboardInterrupt:
         if _debug:
