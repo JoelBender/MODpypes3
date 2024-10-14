@@ -717,7 +717,6 @@ class ReadBitsRequestBase(MPDU, DebugContents):
         pdu.put_short(self.count)
         if _debug:
             MPDU._debug("    - pdu: %r", pdu)
-        pdu.debug_contents()
 
         return pdu
 
@@ -919,11 +918,11 @@ class ReadRegistersResponseBase(MPDU, DebugContents):
 
 
 @modpypes_debugging
-class ReadWriteValueBase(MPDU, DebugContents):
+class WriteValueBase(MPDU, DebugContents):
 
     """
-    Base class for messages reading and writing values.  This class is
-    inherted by :class:`WriteSingleCoilRequest`, :class:`WriteSingleCoilResponse`,
+    Base class for messages writing values.  This class is inherted by
+    :class:`WriteSingleCoilRequest`, :class:`WriteSingleCoilResponse`,
     :class:`WriteSingleRegisterRequest`,  and :class:`WriteSingleRegisterResponse`.
     """
 
@@ -933,7 +932,7 @@ class ReadWriteValueBase(MPDU, DebugContents):
         self, address: Optional[int] = None, value: Optional[int] = None, **kwargs
     ):
         if _debug:
-            ReadWriteValueBase._debug("__init__ %r %r %r", address, value, kwargs)
+            WriteValueBase._debug("__init__ %r %r %r", address, value, kwargs)
 
         MPDU.__init__(self, **kwargs)
         self.address = address
@@ -941,7 +940,7 @@ class ReadWriteValueBase(MPDU, DebugContents):
 
     def encode(self) -> PDU:
         if _debug:
-            ReadWriteValueBase._debug("encode")
+            WriteValueBase._debug("encode")
         assert self.address is not None
         assert self.value is not None
 
@@ -957,7 +956,7 @@ class ReadWriteValueBase(MPDU, DebugContents):
     @classmethod
     def decode(class_, pdu: PDU) -> MPDU:  # type: ignore[override]
         if _debug:
-            ReadWriteValueBase._debug("decode %r", pdu)
+            WriteValueBase._debug("decode %r", pdu)
 
         mpdu = class_()
         mpdu.functionCode = pdu.get()
@@ -1170,7 +1169,7 @@ class ReadInputRegistersResponse(ReadRegistersResponseBase):
         ReadRegistersResponseBase.__init__(
             self,
             count,
-            values,
+            registers=values,
             function_code=ReadInputRegistersResponse.functionCode,
             **kwargs,
         )
@@ -1183,7 +1182,7 @@ class ReadInputRegistersResponse(ReadRegistersResponseBase):
 
 @modpypes_debugging
 @register_request_type
-class WriteSingleCoilRequest(ReadWriteValueBase):
+class WriteSingleCoilRequest(WriteValueBase):
 
     """
     Write Single Coil Request
@@ -1195,7 +1194,7 @@ class WriteSingleCoilRequest(ReadWriteValueBase):
         if _debug:
             WriteSingleCoilRequest._debug("__init__ %r %r %r", address, value, kwargs)
 
-        ReadWriteValueBase.__init__(
+        WriteValueBase.__init__(
             self,
             address,
             value,
@@ -1206,7 +1205,7 @@ class WriteSingleCoilRequest(ReadWriteValueBase):
 
 @modpypes_debugging
 @register_response_type
-class WriteSingleCoilResponse(ReadWriteValueBase):
+class WriteSingleCoilResponse(WriteValueBase):
 
     """
     Write Single Coil Response
@@ -1218,7 +1217,7 @@ class WriteSingleCoilResponse(ReadWriteValueBase):
         if _debug:
             WriteSingleCoilResponse._debug("__init__ %r %r %r", address, value, kwargs)
 
-        ReadWriteValueBase.__init__(
+        WriteValueBase.__init__(
             self,
             address,
             value,
@@ -1234,7 +1233,7 @@ class WriteSingleCoilResponse(ReadWriteValueBase):
 
 @modpypes_debugging
 @register_request_type
-class WriteSingleRegisterRequest(ReadWriteValueBase):
+class WriteSingleRegisterRequest(WriteValueBase):
 
     """
     Write Single Register Request
@@ -1248,7 +1247,7 @@ class WriteSingleRegisterRequest(ReadWriteValueBase):
                 "__init__ %r %r %r", address, value, kwargs
             )
 
-        ReadWriteValueBase.__init__(
+        WriteValueBase.__init__(
             self,
             address,
             value,
@@ -1259,7 +1258,7 @@ class WriteSingleRegisterRequest(ReadWriteValueBase):
 
 @modpypes_debugging
 @register_response_type
-class WriteSingleRegisterResponse(ReadWriteValueBase):
+class WriteSingleRegisterResponse(WriteValueBase):
 
     """
     Write Single Register Response
@@ -1273,7 +1272,7 @@ class WriteSingleRegisterResponse(ReadWriteValueBase):
                 "__init__ %r %r %r", address, value, kwargs
             )
 
-        ReadWriteValueBase.__init__(
+        WriteValueBase.__init__(
             self,
             address,
             value,

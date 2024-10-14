@@ -22,6 +22,12 @@ from .mpdu import (
     data_types,
     request_types,
     response_types,
+    ReadCoilsRequest,
+    ReadCoilsResponse,
+    ReadDiscreteInputsRequest,
+    ReadDiscreteInputsResponse,
+    ReadInputRegistersRequest,
+    ReadInputRegistersResponse,
     ReadHoldingRegistersRequest,
     ReadHoldingRegistersResponse,
     ExceptionResponse,
@@ -407,6 +413,68 @@ class ClientApplication:
         # a little protection against trying again
         self.reader = self.writer = None
 
+    async def read_coils(
+        self, unit_id: int, address: int, count: int
+    ) -> Union[List[int], ExceptionResponse]:
+        if _debug:
+            ClientApplication._debug("read_coils %r %r %r", unit_id, address, count)
+
+        # build a request
+        mpdu = ReadCoilsRequest(
+            unit_id=unit_id,
+            address=address,
+            count=count,
+        )
+        if _debug:
+            ClientApplication._debug("    - mpdu: %r", mpdu)
+
+        # send the request
+        await self.write(mpdu)
+
+        # read the response
+        response = await self.read()
+        if _debug:
+            ClientApplication._debug("    - response: %r", response)
+        if isinstance(response, ExceptionResponse):
+            return response
+
+        assert isinstance(response, ReadCoilsResponse)
+
+        # return the values
+        return response.values
+
+    async def read_descrete_inputs(
+        self, unit_id: int, address: int, count: int
+    ) -> Union[List[int], ExceptionResponse]:
+        if _debug:
+            ClientApplication._debug(
+                "read_descrete_inputs %r %r %r", unit_id, address, count
+            )
+
+        # build a request
+        mpdu = ReadDiscreteInputsRequest(
+            unit_id=unit_id,
+            address=address,
+            count=count,
+        )
+        if _debug:
+            ClientApplication._debug("    - mpdu: %r", mpdu)
+
+        # send the request
+        await self.write(mpdu)
+
+        # read the response
+        response = await self.read()
+        if _debug:
+            ClientApplication._debug("    - response: %r", response)
+        if isinstance(response, ExceptionResponse):
+            return response
+
+        assert isinstance(response, ReadDiscreteInputsResponse)
+
+        # return the values
+        return response.bits
+
     async def read_holding_registers(
         self, unit_id: int, address: int, count: int
     ) -> Union[List[int], ExceptionResponse]:
@@ -435,6 +503,38 @@ class ClientApplication:
             return response
 
         assert isinstance(response, ReadHoldingRegistersResponse)
+
+        # return the registers
+        return response.registers
+
+    async def read_input_registers(
+        self, unit_id: int, address: int, count: int
+    ) -> Union[List[int], ExceptionResponse]:
+        if _debug:
+            ClientApplication._debug(
+                "read_input_registers %r %r %r", unit_id, address, count
+            )
+
+        # build a request
+        mpdu = ReadInputRegistersRequest(
+            unit_id=unit_id,
+            address=address,
+            count=count,
+        )
+        if _debug:
+            ClientApplication._debug("    - mpdu: %r", mpdu)
+
+        # send the request
+        await self.write(mpdu)
+
+        # read the response
+        response = await self.read()
+        if _debug:
+            ClientApplication._debug("    - response: %r", response)
+        if isinstance(response, ExceptionResponse):
+            return response
+
+        assert isinstance(response, ReadInputRegistersResponse)
 
         # return the registers
         return response.registers

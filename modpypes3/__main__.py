@@ -45,7 +45,7 @@ class CmdShell(Cmd):
         dtype: str = "int",
     ) -> None:
         """
-        usage: read address register [ dtype | n ]
+        usage: read unit@address register [ dtype | n ]
         """
         if _debug:
             CmdShell._debug("do_read %r %r %r", address, register, dtype)
@@ -54,14 +54,6 @@ class CmdShell(Cmd):
         # check the address
         if not isinstance(address, UnitIPv4Address):
             raise TypeError("UnitIPv4Address expected")
-
-        # five or six digit register
-        if 40000 <= register <= 49999:
-            register -= 40000
-        elif 400000 <= register <= 499999:
-            register -= 400000
-        else:
-            raise ValueError("holding register address required: 4xxxx")
 
         datatype: Optional[Type[DataType]] = None
 
@@ -80,7 +72,25 @@ class CmdShell(Cmd):
             CmdShell._debug("    - register_length: %r", register_length)
 
         async with ClientApplication(address.addrTuple) as client:
-            result = await client.read_holding_registers(
+            # five or six digit register
+            if 0 <= register <= 9999:
+                client_fn = client.read_coils
+            elif 10000 <= register <= 19999:
+                client_fn = client.read_descrete_inputs
+                register -= 10000
+            elif 100000 <= register <= 199999:
+                client_fn = client.read_descrete_inputs
+                register -= 100000
+            elif 40000 <= register <= 49999:
+                client_fn = client.read_holding_registers
+                register -= 40000
+            elif 400000 <= register <= 499999:
+                client_fn = client.read_holding_registers
+                register -= 400000
+            else:
+                raise NotImplementedError(f"register: {register}")
+
+            result = await client_fn(
                 unit_id=address.addrUnit,
                 address=register - 1,
                 count=register_length,
